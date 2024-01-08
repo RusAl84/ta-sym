@@ -34,6 +34,23 @@ def uploadae():
     return d
 
 
+@app.route('/uploadaem', methods=['POST'])
+@cross_origin()
+def uploadaem():
+    for fname in request.files:
+        f = request.files.get(fname)
+        print(f)
+        milliseconds = int(time.time() * 1000)
+        filename = str(milliseconds)
+        # # f.save('./uploads/%s' % secure_filename(fname))
+        # full_filename = f"./uploads/{milliseconds}.json"
+        # f.save(full_filename)
+        # text = process_nlp.convertJsonMessages2text(full_filename)
+        d = {}
+        # d['text'] = text
+        # d['filename'] = filename
+    return d
+
 @app.route("/get_pattern", methods=['POST'])
 def get_pattern():
     msg = request.json
@@ -62,11 +79,12 @@ def findae():
     print(msg)
     filename = msg['filename']
     counts=msg['counts']
+    text=msg['text']
     # filename="d:/ml/chat/andromedica1.json"
     save_filename="./data_proc.json"
     # data_proc(filename, save_filename, 32)
     # find_cl(save_filename)
-    data = process_nlp.find_soc("./find_data.json", counts)
+    data = process_nlp.find_cl_text(text, counts)
     print(data)
     return data
 

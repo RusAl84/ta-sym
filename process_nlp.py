@@ -1,4 +1,5 @@
 import os
+import os
 import json
 import nltk
 import pymorphy2
@@ -11,7 +12,7 @@ def add_data(text):
     path = pathlib.Path(db_fileName)
     content = []
     data = get_pattern(text)
-    data = add_print_text(data)
+    # data = add_print_text(data)
     if path.exists():
         with open(db_fileName, "r", encoding="UTF8") as file:
             jsoncontent = file.read()
@@ -140,8 +141,8 @@ def remove_all(data):
 
 
 def get_KeyBERT(text):
-    from keybert import KeyBERT
-    kw_model = KeyBERT()
+    from keyBERT import keyBERT
+    kw_model = keyBERT()
     # keywords = kw_model.extract_keywords(doc)
     numOfKeywords = 20
     keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 3), stop_words='english',
@@ -152,20 +153,29 @@ def get_KeyBERT(text):
     return l
 
 
+def get_RAKE(text):
+    from rake_nltk import Rake
+    r = Rake(language="russian")
+    r.extract_keywords_from_text(text)
+    numOfKeywords = 20
+    keywords = r.get_ranked_phrases()[:numOfKeywords]
+    return keywords
+
+
 def get_pattern(text):
     line = {}
     line['text'] = text.strip()
     line['remove_all'] = remove_all(text).strip()
-    line['KEYWORDS'] = get_KeyBERT(text)
+    line['KEYWORDS'] = get_RAKE(text)
     return line
 
 
 def add_print_text(data):   
-    BERT_text =[]
+    KEY_text =[]
     for item in data['KEYWORDS']:
-        BERT_text.append(item[0])
+        KEY_text.append(item[0])
     str1 = str(f"Исходный текст: {data['text']} \n\n"
-            f" KEYWORDS: {BERT_text} \n\n")
+            f" KEYWORDS: {KEY_text} \n\n")
     data['print_text'] = str1
     # print(str1)
     return data
@@ -245,9 +255,9 @@ def find_cl(filename):
         item["KW_COUNT"] = 0
         item["KW_NUM"] = 0
         for cl in data_cl:
-            intersect_BERT = calc_intersection_list(m['KEYWORDS'], cl['KEYWORDS'])
-            if intersect_BERT>item["KW_COUNT"]:
-                item["KW_COUNT"] = intersect_BERT
+            intersect_KEY = calc_intersection_list(m['KEYWORDS'], cl['KEYWORDS'])
+            if intersect_KEY>item["KW_COUNT"]:
+                item["KW_COUNT"] = intersect_KEY
                 item["KW_NUM"] = num
             num += 1
         find_data.append(item)
@@ -259,16 +269,19 @@ def find_cl(filename):
 def find_soc(filename, counts=3):
     messages = load_data_proc(filename)
     find_data = []
-    BERT_set=set()
+    KEY_set=set()
     for m in messages:
-        BERT_set.add(m['KW_COUNT'])
-    BERT_s = max(BERT_set)
-    dif = BERT_s-counts
+        KEY_set.add(m['KW_COUNT'])
+    KEY_s = max(KEY_set)
+    dif = KEY_s-counts
     if dif < 1:
         dif = 1
+    print(dif)
+    print()
+    print()
     for m in messages:
-        if m['KW_COUNT'] >= dif:
-            m = add_print_text(m)
+        if m['KW_COUNT'] >= dif and m['KW_COUNT'] > 0:
+            # m = add_print_text(m)
             find_data.append(m)                     
     jsonstring = json.dumps(find_data, ensure_ascii=False)
     with open("./find_d.json", "w", encoding="UTF8") as file:
@@ -291,27 +304,29 @@ def convertJsonMessages2text(filename):
         text += f"{convertMs2String(m['date'])} {m['message_id']}  {m['user_id']} {m['reply_message_id']}  {m['text']}  <br>\n"
     return text
 
+def find_cl_text(text, counts=3):
+    filename="d:/ml/chat/andromedica1.json"
+    save_filename="./data_proc.json"
+    clear_db()
+    add_data(text)
+    data_proc(filename, save_filename, 32)
+    find_cl(save_filename)
+    find_data=find_soc("./find_data.json", counts)
+    return find_data
 
 if __name__ == '__main__':
     # nltk_download()
-    # s1 = """
-    # Завтра в "Папа Джонс" самый черный пятничный праздник!🖤
-    # Мы знаем, что ты так же обожаешь скидки, поэтому держи подарок от нас - 100% начисления Black CashBack за все заказы 24.11.2023. 
-    # Успей воспользоваться Black CashBack, потому что он действует всего 3 дня!
-
-    # Такая возможность выпадает раз в году – съесть пиццу и получить такой огромный Black CashBack!
-
-    # Время тикает!
-
-    # """
     # add_data(s1)
-    # t = get_pattern(data)
+    s1="Доброе утро! Пусть день будет ясным, А настроение только прекрасным. Пусть пробуждение радость несет, Без суеты, без тревог и забот. Рассвет пусть уносит унылую тень, Счастливой улыбкой встречай новый день."
+    s1="Привет"    # t = get_pattern(data)
     # print(t)
 
-    filename="d:/ml/chat/andromedica1.json"
-    save_filename="./data_proc.json"
+    # filename="d:/ml/chat/andromedica1.json"
+    # save_filename="./data_proc.json"
     
-    # data_proc(filename, save_filename, 32)
-    find_cl(save_filename)
-    find_soc("./find_data.json", 4)
+    # # data_proc(filename, save_filename, 32)
+    # find_cl(save_filename)
+    # find_soc("./find_data.json", 4)
     
+    # res = find_cl_text(s1, 2)
+    # print(res)
