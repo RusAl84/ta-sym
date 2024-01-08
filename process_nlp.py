@@ -276,9 +276,6 @@ def find_soc(filename, counts=3):
     dif = KEY_s-counts
     if dif < 1:
         dif = 1
-    print(dif)
-    print()
-    print()
     for m in messages:
         if m['KW_COUNT'] >= dif and m['KW_COUNT'] > 0:
             # m = add_print_text(m)
